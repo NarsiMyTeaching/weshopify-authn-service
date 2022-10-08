@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,9 @@ public class JwtTokenService {
 
 	@Autowired
 	private WeshopifyUserDetailsService userDetailsService;
+	
+	@Autowired
+	private RedisTemplate<Object, Object> redisTemplate;
 	
 	public String createToken(String loggedInUserName, List<String> roles) {
 		
@@ -46,10 +51,10 @@ public class JwtTokenService {
 	}
 	
 	
-	public UserDetails validateToken(String tokenWithBearer) throws TokenExpiredException, InvalidTokenException {
+	public UserDetails validateToken(String tokenVal) throws TokenExpiredException, InvalidTokenException {
 		boolean isTokenValid = false;
 
-		String tokenVal = resolveToken(tokenWithBearer);
+		//String tokenVal = resolveToken(tokenWithBearer);
 		if (tokenVal != null) {
 			try {
 				Claims userIdentities = Jwts.parser().setSigningKey(ServiceUtil.JWT_TOKEN_API_KEY).parseClaimsJws(tokenVal)
@@ -58,10 +63,14 @@ public class JwtTokenService {
 				UserDetails userDetails = userDetailsService.loadUserByUsername(loggedInUser);
 				if (userDetails != null) { 
 					Date tokenExpDate = userIdentities.getExpiration(); 
+					HashOperations<Object, Object, Object> hashMap = redisTemplate.opsForHash();
 					isTokenValid = new Date().before(tokenExpDate);
 					if (isTokenValid) {
+						hashMap.put(new String("token_expiry"),tokenVal, tokenExpDate);
+						hashMap.put(new String("token_valid"),tokenVal, isTokenValid);
 						return userDetails;
 					}else {
+						hashMap.hasKey(new String("token_valid"), isTokenValid);
 						throw new TokenExpiredException("token expired!! Please get the new token");
 					}
 				}else {

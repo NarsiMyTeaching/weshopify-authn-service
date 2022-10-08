@@ -5,6 +5,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @EnableWebSecurity
@@ -33,5 +34,9 @@ public class WeshopifyPlatformSecurityConfig extends WebSecurityConfigurerAdapte
 		.httpBasic();
 	}
 	
+public static void main(String[] args) {
+	PasswordEncoder pwd = new BCryptPasswordEncoder();
+	System.out.println(pwd.encode("testUser@123"));
+}
 	
 }
